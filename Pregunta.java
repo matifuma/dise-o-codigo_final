@@ -7,8 +7,6 @@ import java.util.List;
 public class Pregunta {
     private Long id;
 
-    // Excepción documentada: CU021 usa nombre para alta/búsqueda; no figura
-    // como atributo en el diagrama de clases ajustado.
     private String nombre;
 
     private String enunciado;
@@ -110,3 +108,4 @@ public class Pregunta {
         }
     }
 }
+
