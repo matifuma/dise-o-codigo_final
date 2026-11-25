@@ -54,11 +54,12 @@ public class GestorPreguntas {
         return preguntaDAO.buscarPregunta(competencia, factor, nombrePregunta);
     }
 
-    /** Alta definida por el diagrama de clases; las opciones quedan asociadas a Pregunta. */
+    /** Alta definida por el diagrama de clases; recibe el tipo explícito. */
     public void darDeAltaPregunta(Competencia competencia, Factor factor, String nombre,
                                   String enunciado, String descripcion,
-                                  List<OpcionRespuesta> opciones) {
+                                  List<OpcionRespuesta> opciones, TipoPregunta tipoPregunta) {
         validarCompetenciaYFactor(competencia, factor);
+        validarTipoPregunta(tipoPregunta);
         validarDatosPregunta(nombre, enunciado, opciones);
         validarOpciones(opciones);
 
@@ -74,7 +75,7 @@ public class GestorPreguntas {
                 enunciado.trim().toUpperCase(Locale.ROOT),
                 descripcion == null ? "" : descripcion.trim().toUpperCase(Locale.ROOT),
                 true,
-                inferirTipoPregunta(opciones),
+                tipoPregunta,
                 competencia,
                 factor,
                 opciones
@@ -83,9 +84,11 @@ public class GestorPreguntas {
     }
 
     /** Modifica los datos editables definidos en CU022. */
-    public void modificarPregunta(Pregunta pregunta, String nombre, String enunciado,
-                                  String descripcion, List<OpcionRespuesta> opciones) {
+    public void modificarPregunta(Pregunta pregunta, TipoPregunta tipoPregunta, String nombre,
+                                  String enunciado, String descripcion,
+                                  List<OpcionRespuesta> opciones) {
         validarPreguntaExistente(pregunta);
+        validarTipoPregunta(tipoPregunta);
         validarDatosPregunta(nombre, enunciado, opciones);
         validarOpciones(opciones);
 
@@ -99,7 +102,7 @@ public class GestorPreguntas {
         pregunta.setNombre(nombre.trim().toUpperCase(Locale.ROOT));
         pregunta.setEnunciado(enunciado.trim().toUpperCase(Locale.ROOT));
         pregunta.setDescripcion(descripcion == null ? "" : descripcion.trim().toUpperCase(Locale.ROOT));
-        pregunta.setTipo(inferirTipoPregunta(opciones));
+        pregunta.setTipo(tipoPregunta);
         pregunta.reemplazarOpciones(opciones);
         preguntaDAO.modificarPregunta(pregunta);
     }
@@ -153,6 +156,12 @@ public class GestorPreguntas {
                 .anyMatch(registro -> Objects.equals(registro.getId(), pregunta.getId()));
         if (!registrada) {
             throw new IllegalArgumentException("La pregunta seleccionada no está registrada.");
+        }
+    }
+
+    private void validarTipoPregunta(TipoPregunta tipoPregunta) {
+        if (tipoPregunta == null) {
+            throw new IllegalArgumentException("Debe seleccionar un tipo de pregunta.");
         }
     }
 
@@ -221,34 +230,5 @@ public class GestorPreguntas {
         return resultado;
     }
 
-    /**
-     * El método UML de alta no recibe TipoPregunta. Se infiere a partir de las
-     * opciones hasta que el contrato del diagrama especifique cómo seleccionarlo.
-     */
-    private TipoPregunta inferirTipoPregunta(List<OpcionRespuesta> opciones) {
-        if (opciones.size() == 2) {
-            String primero = normalizar(opciones.get(0).getTexto());
-            String segundo = normalizar(opciones.get(1).getTexto());
-            boolean verdaderoFalso = (primero.equals("verdadero") && segundo.equals("falso"))
-                    || (primero.equals("falso") && segundo.equals("verdadero"))
-                    || (primero.equals("true") && segundo.equals("false"))
-                    || (primero.equals("false") && segundo.equals("true"));
-            if (verdaderoFalso) {
-                return TipoPregunta.VERDADERO_FALSO;
-            }
-        }
-
-        boolean todasNumericas = opciones.stream().allMatch(opcion -> {
-            try {
-                Double.parseDouble(opcion.getTexto().trim());
-                return true;
-            } catch (RuntimeException excepcion) {
-                return false;
-            }
-        });
-        if (opciones.size() >= 3 && todasNumericas) {
-            return TipoPregunta.ESCALA;
-        }
-        return TipoPregunta.OPCION_MULTIPLE;
-    }
 }
+
