@@ -31,6 +31,11 @@ public class Competencia {
         return id;
     }
 
+    /** Asignación interna del identificador generado por CompetenciaDAO. */
+    void setId(Long id) {
+        this.id = id;
+    }
+
     public String getNombre() {
         return nombre;
     }
@@ -41,6 +46,10 @@ public class Competencia {
 
     public Boolean getActivo() {
         return activo;
+    }
+
+    void setActivo(Boolean activo) {
+        this.activo = activo;
     }
 
     /** Operación explicitada en el diagrama: devuelve el tipo como texto. */

@@ -31,6 +31,11 @@ public class Factor {
         return id;
     }
 
+    /** Asignación interna del identificador generado por FactorDAO. */
+    void setId(Long id) {
+        this.id = id;
+    }
+
     public String getNombre() {
         return nombre;
     }

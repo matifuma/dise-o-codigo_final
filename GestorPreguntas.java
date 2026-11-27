@@ -7,6 +7,10 @@ import java.util.Set;
 
 /** Controlador de gestión de preguntas (CU020 y altas invocadas por CU021). */
 public class GestorPreguntas {
+    private static final int MAX_NOMBRE_PREGUNTA = 50;
+    private static final int MAX_ENUNCIADO = 250;
+    private static final int MAX_DESCRIPCION = 500;
+
     private final PreguntaDAO preguntaDAO;
     private final IProveedorIA proveedorIA;
     private final ServicioAuditoria servicioAuditoria;
@@ -54,19 +58,34 @@ public class GestorPreguntas {
         return preguntaDAO.buscarPregunta(competencia, factor, nombrePregunta);
     }
 
+    /** Búsqueda por factor usada en la validación de evaluabilidad de CU025. */
+    public List<Pregunta> buscarPregunta(Factor factor) {
+        if (factor == null || factor.getId() == null) {
+            throw new IllegalArgumentException("Debe seleccionar un factor registrado.");
+        }
+        List<Pregunta> activas = new ArrayList<>();
+        for (Pregunta pregunta : preguntaDAO.obtenerPreguntasPorFactor(factor.getId())) {
+            if (Boolean.TRUE.equals(pregunta.getActivo())) activas.add(pregunta);
+        }
+        return activas;
+    }
+
     /** Alta definida por el diagrama de clases; recibe el tipo explícito. */
     public void darDeAltaPregunta(Competencia competencia, Factor factor, String nombre,
                                   String enunciado, String descripcion,
                                   List<OpcionRespuesta> opciones, TipoPregunta tipoPregunta) {
         validarCompetenciaYFactor(competencia, factor);
         validarTipoPregunta(tipoPregunta);
-        validarDatosPregunta(nombre, enunciado, opciones);
+        validarDatosPregunta(nombre, enunciado, descripcion, opciones);
         validarOpciones(opciones);
 
-        Set<String> camposDuplicados = camposDuplicados(competencia, factor, null, nombre, enunciado);
-        if (!camposDuplicados.isEmpty()) {
-            throw new IllegalArgumentException("Ya existe una pregunta con el mismo "
-                    + String.join(" y ", camposDuplicados) + " para la competencia y el factor.");
+        // El diagrama de secuencia CU021 muestra una búsqueda por nombre antes del alta.
+        // El nombre debe coincidir exactamente: buscarPregunta admite coincidencias parciales.
+        boolean nombreExistente = buscarPregunta(competencia, factor, nombre).stream()
+                .anyMatch(existente -> normalizar(existente.getNombre()).equals(normalizar(nombre)));
+        if (nombreExistente) {
+            throw new IllegalArgumentException(
+                    "Ya existe una pregunta con ese nombre para la competencia y el factor.");
         }
 
         Pregunta pregunta = new Pregunta(
@@ -89,7 +108,7 @@ public class GestorPreguntas {
                                   List<OpcionRespuesta> opciones) {
         validarPreguntaExistente(pregunta);
         validarTipoPregunta(tipoPregunta);
-        validarDatosPregunta(nombre, enunciado, opciones);
+        validarDatosPregunta(nombre, enunciado, descripcion, opciones);
         validarOpciones(opciones);
 
         Set<String> camposDuplicados = camposDuplicados(pregunta.getCompetencia(), pregunta.getFactor(),
@@ -165,7 +184,7 @@ public class GestorPreguntas {
         }
     }
 
-    private void validarDatosPregunta(String nombre, String enunciado,
+    private void validarDatosPregunta(String nombre, String enunciado, String descripcion,
                                       List<OpcionRespuesta> opciones) {
         List<String> omisiones = new ArrayList<>();
         if (nombre == null || nombre.trim().isEmpty()) {
@@ -179,6 +198,24 @@ public class GestorPreguntas {
         }
         if (!omisiones.isEmpty()) {
             throw new IllegalArgumentException("Faltan datos obligatorios: " + String.join(", ", omisiones));
+        }
+
+        List<String> excedidos = new ArrayList<>();
+        validarLongitud("Nombre de Pregunta", nombre, MAX_NOMBRE_PREGUNTA, excedidos);
+        validarLongitud("Pregunta / enunciado", enunciado, MAX_ENUNCIADO, excedidos);
+        if (descripcion != null) {
+            validarLongitud("Descripción", descripcion, MAX_DESCRIPCION, excedidos);
+        }
+        if (!excedidos.isEmpty()) {
+            throw new IllegalArgumentException("Campos excedidos: " + String.join(", ", excedidos));
+        }
+    }
+
+    private void validarLongitud(String campo, String valor, int maximo, List<String> excedidos) {
+        String recortado = valor.trim();
+        int longitud = recortado.codePointCount(0, recortado.length());
+        if (longitud > maximo) {
+            excedidos.add(campo + " (máximo " + maximo + " caracteres)");
         }
     }
 
