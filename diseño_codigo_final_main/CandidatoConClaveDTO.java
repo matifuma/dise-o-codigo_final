@@ -1,4 +1,4 @@
-/** DTO de la confirmación de CU025; el candidato conserva su entidad asociada para crear el cuestionario. */
+/** DTO compatible con la pantalla de confirmación del CU025. */
 public class CandidatoConClaveDTO extends CandidatoDTO {
     private final Candidato candidato;
     private final String clave;

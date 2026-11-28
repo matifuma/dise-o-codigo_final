@@ -37,16 +37,31 @@ public class PuestoDAO {
         throw new UnsupportedOperationException("Pendiente implementar la baja de puestos.");
     }
 
-    public synchronized List<Puesto> buscarPuestos(String nombre, String empresa) {
+    /** Búsqueda de CU028 con los tres filtros visibles en la pantalla. */
+    public synchronized List<Puesto> buscarPuestos(String codigo, String nombre, String empresa) {
         List<Puesto> resultado = new ArrayList<>();
         for (Puesto puesto : puestos.values()) {
             if (!Boolean.TRUE.equals(puesto.getActivo())) continue;
+            if (!contiene(puesto.getCodigo(), codigo)) continue;
             if (!contiene(puesto.getNombre(), nombre)) continue;
             String nombreEmpresa = puesto.getEmpresa() == null ? "" : puesto.getEmpresa().getNombre();
             if (!contiene(nombreEmpresa, empresa)) continue;
             resultado.add(puesto);
         }
         return resultado;
+    }
+
+    /** Conserva la firma anterior utilizada por casos de uso ya implementados. */
+    public synchronized List<Puesto> buscarPuestos(String nombre, String empresa) {
+        return buscarPuestos(null, nombre, empresa);
+    }
+
+    /** Recupera la entidad completa elegida desde la lista de resultados. */
+    public synchronized Puesto obtenerPuesto(String codigo) {
+        if (codigo == null || codigo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El código del puesto es obligatorio.");
+        }
+        return puestos.get(codigo.trim());
     }
 
     private boolean contiene(String valor, String filtro) {

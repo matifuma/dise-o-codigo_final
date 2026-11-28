@@ -10,14 +10,8 @@ final class Sesion {
   final GestorPuestos puestos;
   final GestorCandidatos candidatos;
   final GestorCuestionariosSesion cuestionarios;
-  final EvaluacionDAO evaluaciones =
-      new EvaluacionDAO() {
-        @Override
-        public synchronized List<Evaluacion> obtenerEvaluacionesPorPuesto(String codigo) {
-          return todos().stream().filter(e -> e.getPuesto().getCodigo().equals(codigo)).toList();
-        }
-      };
-  final GestorReportes reportes = new GestorReportes(evaluaciones);
+  final EvaluacionDAO evaluaciones = new EvaluacionDAO();
+  final GestorReportesSesion reportes = new GestorReportesSesion(evaluaciones);
   final GestorOpcionesRespuesta respuestas;
   private final Map<TipoPregunta, Set<Long>> conjuntos = new EnumMap<>(TipoPregunta.class);
   final RegistroCuestionarios registro = new RegistroCuestionarios();

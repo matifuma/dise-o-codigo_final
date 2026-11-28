@@ -42,7 +42,7 @@ public class GestorCandidatos {
         }
         List<Candidato> conCuestionarioAbierto = new ArrayList<>();
         for (Candidato candidato : activos) {
-            if (cuestionarioDAO.obtenerCuestionariosActivo(
+            if (cuestionarioDAO.obtenerCuestionarioActivo(
                     candidato.getTipoDocumento(), candidato.getNroDocumento()) != null) {
                 conCuestionarioAbierto.add(candidato);
             }
