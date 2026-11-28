@@ -35,7 +35,7 @@ $fuentes = @(Get-ChildItem -LiteralPath $dominio -Filter '*.java') + @(Get-Child
 & javac --release 21 -encoding UTF-8 --module-path $lib --add-modules javafx.controls -d $build $fuentes.FullName
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'pantallas.css') -Destination $build
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'esquema.sql'),(Join-Path $PSScriptRoot 'inicial.sql') -Destination $build
+Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.sql' | Copy-Item -Destination $build
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'postgres-local.ps1') -Destination $build
 $cp="$build;$jdbc;$legado"
 if ($Compilar) { exit 0 }

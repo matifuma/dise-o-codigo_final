@@ -9,6 +9,15 @@ public class ReporteOrdenMerito {
     private final Puesto puestoEvaluado;
     private final List<Candidato> candidatos = new ArrayList<>();
 
+    private final List<Cuestionario> cuestionarios = new ArrayList<>();
+
+    public List<Cuestionario> leerCuestionarios() { return Collections.unmodifiableList(cuestionarios); }
+
+    void agregarCuestionario(Cuestionario cuestionario) {
+        agregarCandidato(cuestionario.getCandidato());
+        cuestionarios.add(cuestionario);
+    }
+
     public ReporteOrdenMerito(Puesto puestoEvaluado, Date fechaEmision) {
         if (puestoEvaluado == null) throw new IllegalArgumentException("El puesto evaluado es obligatorio.");
         this.puestoEvaluado = puestoEvaluado;

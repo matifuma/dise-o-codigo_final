@@ -50,7 +50,7 @@ public class GestorReportes {
 
         entradas.sort(comparadorOrden());
         ReporteOrdenMerito reporte = new ReporteOrdenMerito(puesto, new Date());
-        for (EntradaOrden entrada : entradas) reporte.agregarCandidato(entrada.cuestionario().getCandidato());
+        for (EntradaOrden entrada : entradas) reporte.agregarCuestionario(entrada.cuestionario());
         return reporte;
     }
 

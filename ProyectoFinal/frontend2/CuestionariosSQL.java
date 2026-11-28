@@ -3,23 +3,35 @@ import java.util.*;
 final class CuestionariosSQL {
   static void insertar(BaseSQL db, Progreso q) {
     long id = db.insertar(
-        "INSERT INTO cuestionario(evaluacion,candidato,clave,creado,estado,accesos,posicion) VALUES(?,?,?,?,'ACTIVO',0,0)",
+        "INSERT INTO app_cuestionario(evaluacion,candidato,clave,creado,estado,accesos,posicion,\"fechaCambioEstado\") VALUES(?,?,?,?,'ACTIVO',0,0,?)",
         q.getEvaluacion().getId(),
         q.getCandidato().getNroCandidato(),
         q.getClave(),
-        q.getFechaCreacion().getTime());
+        q.getFechaCreacion().getTime(), q.getFechaCreacion().getTime());
+    long bloque = 0;
+    int tam = q.getCantidadPreguntasPorBloque();
     for (int i = 0; i < q.items.size(); i++) {
       var item = q.items.get(i);
-      db.ejecutar("INSERT INTO item VALUES(?,?,?,?)", id, i, item.factor().getId(), item.texto());
+      if (i % tam == 0) {
+        bloque = db.leer("""
+            INSERT INTO "BloqueCuestionario" ("idCuestionario",numero) VALUES(?,?)
+            RETURNING "idBloqueCuestionario"
+            """, r -> r.getLong(1), id, i / tam + 1).get(0);
+      }
+      db.ejecutar("INSERT INTO incluye VALUES(?,?,?,?,?,?,?)",
+          id, i, bloque, i % tam + 1, item.idPregunta(), item.factor().getId(), item.texto());
       for (var o : item.opciones())
         db.ejecutar(
-            "INSERT INTO alternativa VALUES(?,?,?,?,?,?)",
+            """
+            INSERT INTO "AlternativaEmitida" VALUES(?,?,?,?,?,?,(
+              SELECT "idOpcionRespuesta" FROM "OpcionRespuesta" WHERE "idPregunta"=? AND "idPlantilla"=?))
+            """,
             id,
             i,
             o.getId(),
             o.getTexto(),
             o.getPuntaje(),
-            o.getOrden());
+            o.getOrden(), item.idPregunta(), o.getId());
     }
     q.setId(id);
   }
@@ -30,7 +42,7 @@ final class CuestionariosSQL {
       Map<Integer, Candidato> personas,
       Map<Long, Factor> factores) {
     return db.leer(
-        "SELECT * FROM cuestionario ORDER BY id",
+        "SELECT * FROM app_cuestionario ORDER BY id",
         r -> {
           long id = r.getLong("id");
           var estado = EstadoCuestionario.valueOf(r.getString("estado"));
@@ -38,11 +50,11 @@ final class CuestionariosSQL {
               new Cuestionario(
                   id,
                   BaseSQL.fecha(r, "creado"),
-                  2,
-                  2,
+                  r.getInt("cantPreguntasPorFactor"),
+                  r.getInt("cantPreguntasPorBloque"),
                   BaseSQL.fecha(r, "inicio"),
                   BaseSQL.fecha(r, "fin"),
-                  null,
+                  BaseSQL.fecha(r,"fechaCambioEstado"),
                   r.getInt("accesos"),
                   r.getString("clave"),
                   estado,
@@ -50,11 +62,11 @@ final class CuestionariosSQL {
                   evaluaciones.get(r.getLong("evaluacion")));
           var items =
               db.leer(
-                  "SELECT * FROM item WHERE cuestionario=? ORDER BY orden",
+                  "SELECT * FROM app_item WHERE cuestionario=? ORDER BY orden",
                   it -> {
                     var ops =
                         db.leer(
-                            "SELECT * FROM alternativa WHERE cuestionario=? AND item=? ORDER BY"
+                            "SELECT * FROM app_alternativa WHERE cuestionario=? AND item=? ORDER BY"
                                 + " orden",
                             o ->
                                 new OpcionRespuesta(
@@ -65,11 +77,11 @@ final class CuestionariosSQL {
                                     true),
                             id,
                             it.getInt("orden"));
-                    return new Progreso.Item(
+                    return new Progreso.Item(it.getObject("idPregunta", Long.class),
                         factores.get(it.getLong("factor")), it.getString("enunciado"), ops);
                   },
                   id);
-          var q = new Progreso(original, items, db);
+          var q = new Progreso(original, items, db, r.getLong("idConfiguracionSistema"));
           q.restaurar(
               estado,
               original.getFechaInicio(),
@@ -79,7 +91,7 @@ final class CuestionariosSQL {
               r.getInt("posicion"));
           for (var respuesta :
               db.leer(
-                  "SELECT item,opcion FROM respuesta WHERE cuestionario=?",
+                  "SELECT item,opcion FROM app_respuesta WHERE cuestionario=?",
                   a -> Map.entry(a.getInt(1), a.getLong(2)),
                   id)) {
             int indice = respuesta.getKey();

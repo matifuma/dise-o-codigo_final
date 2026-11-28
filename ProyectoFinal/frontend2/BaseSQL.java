@@ -22,12 +22,18 @@ final class BaseSQL implements AutoCloseable {
         if(!leer("SELECT pg_try_advisory_lock(hashtext(current_database()),hashtext(current_schema()))", r->r.getBoolean(1)).get(0))
           throw new IllegalStateException("Ya hay otra sesión de Capital Humano usando esta base.");
         transaccion(()->{
-          script("esquema.sql");
+          ejecutar("CREATE TABLE IF NOT EXISTS version_bd(version INT PRIMARY KEY)");
           var versiones=leer("SELECT version FROM version_bd",r->r.getInt(1));
           if(versiones.isEmpty()){
+            script("esquema-v1.sql");
             if(System.getenv("CAPITAL_TEST_SCHEMA")!=null || !MigracionH2.importarSiExiste(this)) script("inicial.sql");
             ejecutar("INSERT INTO version_bd VALUES(1)");
-          } else if(!versiones.equals(List.of(1))) throw new IllegalStateException("Versión de base de datos incompatible.");
+          }
+          if (versiones.isEmpty() || versiones.equals(List.of(1))) {
+            script("esquema.sql");
+            script("ejecucion.sql");
+            script("migracion-der.sql");
+          } else if(!versiones.equals(List.of(2))) throw new IllegalStateException("Versión de base de datos incompatible.");
           return null;
         });
       } catch (RuntimeException e) {
@@ -42,7 +48,8 @@ final class BaseSQL implements AutoCloseable {
   private void script(String nombre) {
     try (var in = Objects.requireNonNull(getClass().getResourceAsStream("/" + nombre))) {
       String sql = new String(in.readAllBytes(), StandardCharsets.UTF_8).replace("\uFEFF", "");
-      for (String sentencia : sql.split(";")) if (!sentencia.isBlank()) ejecutar(sentencia);
+      try (var st = conexion.createStatement()) { st.execute(sql); }
+      catch (SQLException e) { throw error(e); }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

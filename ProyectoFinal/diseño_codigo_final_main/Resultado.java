@@ -23,6 +23,17 @@ public class Resultado {
         this.puntajeRequerido = competenciaRequerida.getPuntajeMinimo();
     }
 
+    /** Reconstruye la fila de ResultadoCompetencia persistida al completar el cuestionario. */
+    static Resultado restaurar(CompetenciaRequerida requerida, long id, double puntaje, Date fecha) {
+        Resultado resultado = new Resultado(requerida);
+        resultado.id = id;
+        resultado.puntajeObtenido = puntaje;
+        resultado.fechaCalculo = copiaFecha(fecha);
+        return resultado;
+    }
+
+    private static Date copiaFecha(Date fecha) { return fecha == null ? null : new Date(fecha.getTime()); }
+
     public Long getId() { return id; }
     public Double getPuntajeObtenido() { return puntajeObtenido; }
     public Double getPuntajeRequerido() { return puntajeRequerido; }

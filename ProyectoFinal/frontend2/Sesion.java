@@ -14,15 +14,11 @@ final class Sesion implements AutoCloseable {
   final RegistroCuestionarios registro = new RegistroCuestionarios();
   final EvaluacionDAO evaluaciones =
       new EvaluacionDAO() {
-        @Override
-        public synchronized List<Evaluacion> obtenerEvaluacionesPorPuesto(String codigo) {
-          return todos().stream().filter(e -> e.getPuesto().getCodigo().equals(codigo)).toList();
-        }
 
         @Override
         public synchronized void guardar(Evaluacion ev) {
           if (ev.getId() == null) {
-            ev.setId(db.insertar("INSERT INTO evaluacion(puesto,fecha) VALUES(?,?)",
+            ev.setId(db.insertar("INSERT INTO app_evaluacion(puesto,fecha) VALUES(?,?)",
                 ev.getPuesto().getCodigo(), ev.getFecha().getTime()));
           }
           super.guardar(ev);
@@ -42,7 +38,7 @@ final class Sesion implements AutoCloseable {
       var comps =
           indice(
               db.leer(
-                  "SELECT * FROM competencia ORDER BY id",
+                  "SELECT * FROM app_competencia ORDER BY id",
                   r ->
                       new Competencia(
                           r.getLong("id"),
@@ -56,7 +52,7 @@ final class Sesion implements AutoCloseable {
       var factores =
           indice(
               db.leer(
-                  "SELECT * FROM factor ORDER BY id",
+                  "SELECT * FROM app_factor ORDER BY id",
                   r ->
                       new Factor(
                           r.getLong("id"),
@@ -68,7 +64,7 @@ final class Sesion implements AutoCloseable {
               Factor::getId);
       var opciones =
           db.leer(
-              "SELECT * FROM opcion ORDER BY id",
+              "SELECT * FROM app_opcion ORDER BY id",
               r -> {
                 conjuntos
                     .computeIfAbsent(
@@ -87,7 +83,7 @@ final class Sesion implements AutoCloseable {
             @Override
             public void registrarAuditoria(RegistroAuditoria reg) {
               db.ejecutar(
-                  "INSERT INTO auditoria(fecha,detalle,entidad) VALUES(?,?,?)",
+                  "INSERT INTO app_auditoria(fecha,detalle,entidad) VALUES(?,?,?)",
                   reg.getFechaHora().getTime(),
                   reg.getDetalleOperacion(),
                   reg.getEntidadAfectada());
@@ -96,7 +92,7 @@ final class Sesion implements AutoCloseable {
             @Override
             public List<RegistroAuditoria> obtenerAuditorias() {
               return db.leer(
-                  "SELECT * FROM auditoria ORDER BY id",
+                  "SELECT * FROM app_auditoria ORDER BY id",
                   r ->
                       new RegistroAuditoria(
                           BaseSQL.fecha(r, "fecha"),
@@ -147,11 +143,11 @@ final class Sesion implements AutoCloseable {
       var puestosPorCodigo =
           indice(
               db.leer(
-                  "SELECT * FROM puesto ORDER BY codigo",
+                  "SELECT * FROM app_puesto ORDER BY codigo",
                   r -> {
                     var requisitos =
                         db.leer(
-                            "SELECT * FROM requisito WHERE puesto=? ORDER BY competencia",
+                            "SELECT * FROM app_requisito WHERE puesto=? ORDER BY competencia",
                             m ->
                                 new CompetenciaRequerida(
                                     comps.get(m.getLong("competencia")), m.getDouble("minimo")),
@@ -169,7 +165,7 @@ final class Sesion implements AutoCloseable {
       var personas =
           indice(
               db.leer(
-                  "SELECT * FROM candidato ORDER BY numero",
+                  "SELECT * FROM app_candidato ORDER BY numero",
                   r ->
                       new Candidato(
                           r.getBoolean("activo"),
@@ -189,7 +185,7 @@ final class Sesion implements AutoCloseable {
       var evs =
           indice(
               db.leer(
-                  "SELECT * FROM evaluacion ORDER BY id",
+                  "SELECT * FROM app_evaluacion ORDER BY id",
                   r ->
                       new Evaluacion(
                           r.getLong("id"),
@@ -200,7 +196,7 @@ final class Sesion implements AutoCloseable {
       for (Progreso q : CuestionariosSQL.cargar(db, evs, personas, factores)) registro.restaurar(q);
       candidatos = new GestorCandidatos(cands, registro);
       cuestionarios = new GestorCuestionariosSesion(cands, registro, evaluaciones, db);
-      reportes = new GestorReportes(evaluaciones);
+      reportes = new GestorReportes(evaluaciones, registro, new ExportadorCSV());
     } catch (RuntimeException e) {
       db.close();
       throw e;
@@ -237,7 +233,7 @@ final class Sesion implements AutoCloseable {
             .forEach(
                 p ->
                     items.add(
-                        new Progreso.Item(factor, p.getEnunciado(), List.copyOf(p.getOpciones()))));
+                        new Progreso.Item(p.getId(), factor, p.getEnunciado(), List.copyOf(p.getOpciones()))));
       }
     Collections.shuffle(items);
     return List.copyOf(items);

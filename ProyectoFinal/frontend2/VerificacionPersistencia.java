@@ -80,14 +80,23 @@ final class VerificacionPersistencia {
           comprobar(
               s.reportes
                   .emitirOrdenMerito(puesto, List.of(q.getEvaluacion().getId()))
-                  .get("Orden de mérito")
+                  .leerCuestionarios()
                   .contains(q),
               "Reporte reconstruido");
           comprobar(
               s.preguntas.buscarPregunta(null, null, "persistencia").isEmpty(), "Baja lógica");
           comprobar(
-              s.db.leer("SELECT COUNT(*) FROM auditoria", r -> r.getInt(1)).get(0) == 1,
+              s.db.leer("SELECT COUNT(*) FROM app_auditoria", r -> r.getInt(1)).get(0) == 1,
               "Auditoría persistida");
+          comprobar(s.db.leer("""
+              SELECT (SELECT count(*) FROM "Resultado" WHERE cumplimiento AND "puntajeObtenido"=10)=1
+                AND (SELECT count(*) FROM "ResultadoCompetencia" WHERE "cumpleMinimo")=3
+                AND (SELECT count(*) FROM "ResultadoFactor" WHERE "puntajeObtenido"=10)=3
+                AND (SELECT count(*) FROM "BloqueCuestionario" WHERE completado AND "fechaCompletado" IS NOT NULL)=3
+                AND (SELECT count(*) FROM "RespuestaCandidato" WHERE "fechaRespuesta" IS NOT NULL
+                     AND "idPregunta" IS NOT NULL AND "idOpcionRespuesta" IS NOT NULL)=6
+                AND EXISTS (SELECT 1 FROM "RegistroEjecucion" WHERE accion='Confirmar bloque')
+              """, r -> r.getBoolean(1)).get(0), "Relaciones del DER después de reabrir");
           var claves = s.cuestionarios.generarClavesAcceso(List.<CandidatoDTO>of(candidato));
           s.cuestionarios.evaluarCandidatos(claves, puesto);
           comprobar(

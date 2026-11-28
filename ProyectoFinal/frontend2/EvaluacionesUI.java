@@ -272,9 +272,9 @@ final class EvaluacionesUI {
     a.pagina("Completar cuestionario", a::modos);
     var info =
         new Label(
-            "Respondé todas las preguntas de cada bloque antes de avanzar. Los bloques confirmados"
-                + " quedan cerrados. Podés salir y retomar con la misma clave. Disponés de 60"
-                + " minutos y hasta tres ingresos.");
+            q.configuracion.getInstruccionesCuestionario() + " Disponés de "
+                + q.configuracion.getTiempoMaximoMinutos() + " minutos y hasta "
+                + q.configuracion.getCantidadAccesosMaximos() + " ingresos.");
     info.setWrapText(true);
     a.cuerpo.getChildren().addAll(Aplicacion.titulo("Instrucciones del cuestionario"), info);
     a.pie(a.secundario("Cancelar", a::modos), a.accion("Aceptar", () -> iniciar(q)));
@@ -302,7 +302,7 @@ final class EvaluacionesUI {
         .getChildren()
         .addAll(
             Aplicacion.titulo(
-                "Bloque " + (q.posicion / 2 + 1) + " de " + ((q.items.size() + 1) / 2)),
+                "Bloque " + (q.posicion / q.getCantidadPreguntasPorBloque() + 1) + " de " + (Math.ceilDiv(q.items.size(), q.getCantidadPreguntasPorBloque()))),
             progreso);
     for (int i = q.posicion; i < fin; i++) {
       int indice = i;

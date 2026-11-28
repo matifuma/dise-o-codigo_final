@@ -7,14 +7,16 @@ final class PreguntasSQL extends PreguntaDAO {
     this.db = db;
     for (Pregunta p :
         db.leer(
-            "SELECT * FROM pregunta ORDER BY id",
+            "SELECT * FROM app_pregunta ORDER BY id",
             r -> {
               long id = r.getLong("id");
               Factor f = factores.get(r.getLong("factor"));
               var opciones =
                   db.leer(
-                      "SELECT o.id,o.texto,po.puntaje,o.orden,o.activo FROM pregunta_opcion po JOIN"
-                          + " opcion o ON o.id=po.opcion WHERE po.pregunta=? ORDER BY o.orden",
+                      """
+                      SELECT "idPlantilla",texto,puntaje,orden,activo FROM "OpcionRespuesta"
+                      WHERE "idPregunta"=? AND activo ORDER BY orden
+                      """,
                       o ->
                           new OpcionRespuesta(
                               o.getLong(1),
@@ -38,7 +40,11 @@ final class PreguntasSQL extends PreguntaDAO {
 
   private void guardarOpciones(Pregunta p, long id) {
     for (var o : p.getOpciones())
-      db.ejecutar("INSERT INTO pregunta_opcion VALUES(?,?,?)", id, o.getId(), o.getPuntaje());
+      db.ejecutar("""
+          INSERT INTO "OpcionRespuesta" ("idPregunta","idPlantilla",texto,puntaje,orden,activo)
+          VALUES(?,?,?,?,?,true) ON CONFLICT ("idPregunta","idPlantilla")
+          DO UPDATE SET texto=EXCLUDED.texto,puntaje=EXCLUDED.puntaje,orden=EXCLUDED.orden,activo=true
+          """, id, o.getId(), o.getTexto(), o.getPuntaje(), o.getOrden());
   }
 
   @Override
@@ -48,7 +54,7 @@ final class PreguntasSQL extends PreguntaDAO {
             () -> {
               long clave =
                   db.insertar(
-                      "INSERT INTO pregunta(factor,tipo,nombre,enunciado,descripcion,activo)"
+                      "INSERT INTO app_pregunta(factor,tipo,nombre,enunciado,descripcion,activo)"
                           + " VALUES(?,?,?,?,?,?)",
                       p.getFactor().getId(),
                       p.getTipo().name(),
@@ -68,14 +74,14 @@ final class PreguntasSQL extends PreguntaDAO {
     db.transaccion(
         () -> {
           if (db.ejecutar(
-                  "UPDATE pregunta SET tipo=?,nombre=?,enunciado=?,descripcion=? WHERE id=?",
+                  "UPDATE app_pregunta SET tipo=?,nombre=?,enunciado=?,descripcion=? WHERE id=?",
                   p.getTipo().name(),
                   p.getNombre(),
                   p.getEnunciado(),
                   p.getDescripcion(),
                   p.getId())
               != 1) throw new IllegalStateException("Pregunta inexistente.");
-          db.ejecutar("DELETE FROM pregunta_opcion WHERE pregunta=?", p.getId());
+          db.ejecutar("UPDATE \"OpcionRespuesta\" SET activo=false WHERE \"idPregunta\"=?", p.getId());
           guardarOpciones(p, p.getId());
           return null;
         });
@@ -84,7 +90,7 @@ final class PreguntasSQL extends PreguntaDAO {
 
   @Override
   public synchronized void eliminarPregunta(Long id) {
-    db.ejecutar("UPDATE pregunta SET activo=FALSE WHERE id=?", id);
+    db.ejecutar("UPDATE app_pregunta SET activo=FALSE WHERE id=?", id);
     super.eliminarPregunta(id);
   }
 }

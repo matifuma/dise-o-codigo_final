@@ -79,7 +79,7 @@ final class ReportesUI {
             "Emitir orden",
             () -> {
               Puesto p = Aplicacion.elegido(tabla, "Seleccioná un puesto.");
-              var lista = a.sesion.evaluaciones.obtenerEvaluacionesPorPuesto(p.getCodigo());
+              var lista = a.sesion.evaluaciones.obtenerEvaluacionesEntidadPorPuesto(p.getCodigo());
               if (lista.isEmpty()) {
                 a.informar("El puesto seleccionado no posee evaluaciones.");
                 return;
@@ -90,7 +90,7 @@ final class ReportesUI {
   }
 
   private List<Cuestionario> participantes(Puesto p) {
-    return a.sesion.evaluaciones.obtenerEvaluacionesPorPuesto(p.getCodigo()).stream()
+    return a.sesion.evaluaciones.obtenerEvaluacionesEntidadPorPuesto(p.getCodigo()).stream()
         .flatMap(e -> e.obtenerCuestionarios().stream())
         .toList();
   }
@@ -141,9 +141,16 @@ final class ReportesUI {
     a.cuerpo.getChildren().add(Aplicacion.titulo(cabecera));
     var lineas = new ArrayList<String>();
     lineas.add(cabecera);
-    a.sesion
-        .reportes
-        .emitirOrdenMerito(p, evaluaciones.stream().map(Evaluacion::getId).toList())
+    var reporte = a.sesion.reportes.emitirOrdenMerito(p, evaluaciones.stream().map(Evaluacion::getId).toList());
+    Map<String,List<Progreso>> grupos = new LinkedHashMap<>();
+    grupos.put("Orden de mérito", new ArrayList<>());
+    for (var cuestionario : reporte.leerCuestionarios()) {
+      var q = (Progreso) cuestionario;
+      String grupo = q.cumple() ? "Orden de mérito" : q.getEstado() == EstadoCuestionario.COMPLETADO
+          ? "Completados sin alcanzar los mínimos" : q.getEstado().name().replace('_',' ');
+      grupos.computeIfAbsent(grupo, k -> new ArrayList<>()).add(q);
+    }
+    grupos
         .forEach(
             (grupo, filas) -> {
               var t = Aplicacion.tabla(filas);

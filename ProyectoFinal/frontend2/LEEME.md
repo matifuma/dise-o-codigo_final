@@ -19,7 +19,7 @@ Ambos modos guardan sus datos en PostgreSQL 18 mediante JDBC. En Windows de 64 b
 
 La base local se llama `capital_humano` y escucha en `127.0.0.1:55432`. Para consultarla desde pgAdmin, usá esos datos, el usuario `capital_app` y la contraseña guardada en `%LOCALAPPDATA%\CapitalHumano\postgres-local\app.key`. Conservá esa clave en privado.
 
-Si existe la base anterior en `%LOCALAPPDATA%\CapitalHumano\datos\evaluaciones.mv.db`, cerrá el frontend anterior antes del primer arranque. La aplicación importa los datos en una transacción y conserva el archivo original. En una instalación nueva carga los ejemplos de `inicial.sql`. El esquema relacional está en `esquema.sql`. Los cuestionarios conservan una copia ordenada de sus preguntas y alternativas. Las respuestas y el estado se guardan durante el cuestionario. Los reportes se calculan a partir de esos datos.
+Si existe la base anterior en `%LOCALAPPDATA%\CapitalHumano\datos\evaluaciones.mv.db`, cerrá el frontend anterior antes del primer arranque. La aplicación importa los datos en una transacción y conserva el archivo original. En una instalación nueva carga los ejemplos de `inicial.sql`. El esquema relacional está en `esquema.sql`. Los cuestionarios conservan una copia ordenada de sus preguntas y alternativas. Las respuestas y el estado se guardan durante el cuestionario. Al completar un cuestionario, PostgreSQL registra el resultado global, el resultado por competencia y el detalle por factor. El orden de mérito usa esos puntajes al reabrir la aplicación.
 
 Para respaldar la base local, ejecutá con las herramientas de cliente de PostgreSQL 18 y elegí una carpeta de destino privada:
 
@@ -33,6 +33,23 @@ CU020, CU021, CU023 y CU025 utilizan los gestores del proyecto final. Los límit
 
 Para CU026, `GestorCuestionariosSesion` extiende el gestor existente y `Progreso` extiende el cuestionario para guardar en SQL las preguntas, respuestas, accesos y estado. Para CU028, `GestorReportes` clasifica esos mismos cuestionarios por puesto y evaluaciones seleccionadas.
 
+## Correspondencia con el DER de la entrega 4
+
+El esquema de versión 2 conserva los nombres del DER entre comillas, incluida la columna `"Puesto"."descripción"`. Las relaciones uno a muchos se implementan mediante claves foráneas nombradas como los rombos. `requiere` e `incluye` guardan respectivamente `"puntajeMinimo"` y `"ordenEnBloque"`. Para consultar el modelo en pgAdmin, por ejemplo:
+
+```sql
+SELECT e."idEvaluacion", q."idCuestionario", c.apellido, r."puntajeObtenido", r.cumplimiento
+FROM "Evaluacion" e
+JOIN "Cuestionario" q USING ("idEvaluacion")
+JOIN "Candidato" c USING ("nroCandidato")
+LEFT JOIN "Resultado" r USING ("idCuestionario");
+```
+
+- **CU020–023.** `"PlantillaOpcion"` conserva las opciones reutilizables del catálogo. Cada `"OpcionRespuesta"` pertenece a una pregunta y mantiene su ponderación.
+- **CU025–026.** `incluye` vincula el bloque y la pregunta. `"AlternativaEmitida"` conserva el texto y puntaje vistos por el candidato aunque el catálogo se edite después. Los límites de tiempo y accesos provienen de `"ConfiguracionSistema"`.
+- **CU028.** El DER introduce `"ResultadoCompetencia"` entre el resultado del cuestionario y el detalle por factor. La capa Java recupera estas filas como los objetos `Resultado` por competencia que recibe el gestor de reportes del proyecto. El puntaje del reporte es el promedio de las competencias. Para entrar al orden de mérito se debe alcanzar cada mínimo.
+- **Migración.** La versión 1 se transforma dentro de una transacción. Los tiempos históricos se conservan en milisegundos desde Unix. Las fechas de respuesta o de confirmación que la versión anterior no registró quedan nulas. Para las preguntas históricas se recupera la referencia cuando hay una única coincidencia por factor y enunciado. La cuenta lógica `CONSULTOR` corresponde al único modo consultor de la interfaz; su contraseña queda nula. El atributo `"Evaluacion".nombre` queda disponible para una futura entrada de nombre: el formulario actual identifica las evaluaciones por ID y fecha.
+
 ## Verificación
 
 Desde esta carpeta, podés ejecutar la prueba funcional, que usa una sesión independiente:
@@ -40,4 +57,3 @@ Desde esta carpeta, podés ejecutar la prueba funcional, que usa una sesión ind
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\iniciar.ps1 -Verificar
 ```
-
