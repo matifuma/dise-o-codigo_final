@@ -1,0 +1,27 @@
+.root { -fx-font-family: "Segoe UI"; -fx-font-size: 14px; -fx-background-color: white; }
+.header { -fx-background-color: #f1f3f7; -fx-padding: 20 32 18 32; }
+.header .label { -fx-text-fill: #536176; }
+.header .titulo { -fx-font-size: 27px; -fx-font-weight: bold; -fx-text-fill: #192435; }
+.seccion { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #263448; }
+.contador { -fx-font-size: 11px; -fx-text-fill: #566577; }
+.scroll-pane, .scroll-pane > .viewport { -fx-background-color: white; }
+.button { -fx-padding: 8 18; -fx-cursor: hand; -fx-background-radius: 3; }
+.primario { -fx-background-color: #1264e9; -fx-text-fill: white; }
+.primario:hover { -fx-background-color: #0a52c6; }
+.secundario { -fx-background-color: #edf0f5; -fx-text-fill: #273650; }
+.link { -fx-background-color: transparent; -fx-text-fill: #185eb9; -fx-padding: 0 0 4 0; }
+.pie { -fx-padding: 14 32; -fx-background-color: white; -fx-border-color: #dbe1e9 transparent transparent transparent; }
+.error { -fx-background-color: #fff1f0; -fx-text-fill: #982f28; -fx-padding: 10; }
+.text-field,.text-area,.combo-box { -fx-background-color: #f3f5f8; -fx-border-color: #d7dfe8; -fx-border-radius: 3; }
+.table-view { -fx-background-color: white; -fx-border-color: #dbe1e9; }
+.table-view .column-header,.table-view .column-header-background { -fx-background-color: #edf0f5; }
+.table-row-cell { -fx-cell-size: 30px; }
+.button:focused,.text-field:focused,.combo-box:focused,.table-view:focused { -fx-border-color: #3174cf; -fx-border-radius: 3; }
+
+
+.tarjeta { -fx-padding: 28 24; -fx-background-color: #f2f6fd; -fx-border-color: #cbd9ee; -fx-border-radius: 5; -fx-font-size: 18px; -fx-font-weight: bold; -fx-alignment: center-left; -fx-text-fill: #153d78; }
+.tarjeta:hover, .tarjeta:focused { -fx-background-color: #dfebff; -fx-border-color: #3271c7; }
+
+.nombre-tarjeta { -fx-font-size: 21px; -fx-font-weight: bold; -fx-text-fill: #163c70; }
+.detalle-tarjeta { -fx-font-size: 14px; -fx-font-weight: normal; -fx-text-fill: #4b5c70; }
+.flecha { -fx-font-size: 26px; -fx-text-fill: #2964af; }

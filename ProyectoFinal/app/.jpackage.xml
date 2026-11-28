@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<jpackage-state version="25.0.5" platform="windows">
+  <app-version>1.0</app-version>
+  <main-launcher>Capital Humano</main-launcher>
+  <main-class>Aplicacion</main-class></jpackage-state>
