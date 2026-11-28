@@ -9,13 +9,21 @@ public class PuestoDTO {
     private final String descripcion;
     private final String empresa;
     private final List<CompetenciaRequeridaDTO> competenciasRequeridas;
+    private final Integer cantidadCandidatos;
+    private final Integer cantidadEvaluacionesCompletas;
 
     public PuestoDTO(Puesto puesto) {
+        this(puesto, null, null);
+    }
+
+    public PuestoDTO(Puesto puesto, Integer cantidadCandidatos, Integer cantidadEvaluacionesCompletas) {
         if (puesto == null) throw new IllegalArgumentException("El puesto es obligatorio.");
         this.codigo = puesto.getCodigo();
         this.nombre = puesto.getNombre();
         this.descripcion = puesto.getDescripcion();
         this.empresa = puesto.getEmpresa() == null ? "" : puesto.getEmpresa().getNombre();
+        this.cantidadCandidatos = cantidadCandidatos;
+        this.cantidadEvaluacionesCompletas = cantidadEvaluacionesCompletas;
         this.competenciasRequeridas = new ArrayList<>();
         for (CompetenciaRequerida requerida : puesto.getCompetenciasRequeridas()) {
             Competencia competencia = requerida.getCompetencia();
@@ -29,6 +37,8 @@ public class PuestoDTO {
     public String getNombre() { return nombre; }
     public String getDescripcion() { return descripcion; }
     public String getEmpresa() { return empresa; }
+    public Integer getCantidadCandidatos() { return cantidadCandidatos; }
+    public Integer getCantidadEvaluacionesCompletas() { return cantidadEvaluacionesCompletas; }
     public List<CompetenciaRequeridaDTO> getCompetenciasRequeridas() {
         return Collections.unmodifiableList(competenciasRequeridas);
     }

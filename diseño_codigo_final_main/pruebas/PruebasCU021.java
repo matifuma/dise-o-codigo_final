@@ -84,7 +84,7 @@ public final class PruebasCU021 {
 
     private static void buscarCompetenciasActivas() {
         Fixture f = new Fixture();
-        List<Competencia> resultados = f.gestorCompetencias.buscarCompetencia("datos");
+        List<Competencia> resultados = f.gestorCompetencias.buscarCompetencias("datos");
         igual(1, resultados.size());
         igual(f.competencia.getId(), resultados.get(0).getId());
     }

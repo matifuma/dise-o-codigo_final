@@ -67,12 +67,17 @@ public class GestorCompetencias {
     }
 
     /** Para el selector del CU021 solo se muestran competencias activas. */
-    public List<Competencia> buscarCompetencia(String nombre) {
+    public List<Competencia> buscarCompetencias(String nombre) {
         List<Competencia> resultado = new ArrayList<>();
         for (Competencia competencia : competenciaDAO.buscarCompetencias(nombre)) {
             if (Boolean.TRUE.equals(competencia.getActivo())) resultado.add(competencia);
         }
         return resultado;
+    }
+
+    /** Alias conservado para la pantalla JavaFX existente. */
+    public List<Competencia> buscarCompetencia(String nombre) {
+        return buscarCompetencias(nombre);
     }
 
     /** TODO: mantenimiento fuera del flujo CU025; reglas de alta pendientes de consensuar. */

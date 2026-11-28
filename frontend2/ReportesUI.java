@@ -79,7 +79,7 @@ final class ReportesUI {
             "Emitir orden",
             () -> {
               Puesto p = Aplicacion.elegido(tabla, "Seleccioná un puesto.");
-              var lista = a.sesion.evaluaciones.obtenerEvaluacionesPorPuesto(p.getCodigo());
+              var lista = a.sesion.evaluaciones.obtenerEvaluacionesEntidadPorPuesto(p.getCodigo());
               if (lista.isEmpty()) {
                 a.informar("El puesto seleccionado no posee evaluaciones.");
                 return;
@@ -90,7 +90,7 @@ final class ReportesUI {
   }
 
   private List<Cuestionario> participantes(Puesto p) {
-    return a.sesion.evaluaciones.obtenerEvaluacionesPorPuesto(p.getCodigo()).stream()
+    return a.sesion.evaluaciones.obtenerEvaluacionesEntidadPorPuesto(p.getCodigo()).stream()
         .flatMap(e -> e.obtenerCuestionarios().stream())
         .toList();
   }

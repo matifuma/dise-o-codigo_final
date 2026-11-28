@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 /** Exporta a SpreadsheetML (XML de Excel 2003) sin bibliotecas externas. */
-public class ExportadorExcel {
+public class ExportadorExcel implements IExportadorArchivos {
     private static final String NS = "urn:schemas-microsoft-com:office:spreadsheet";
 
     /** El destino es la ruta completa del archivo con extensión .xls. */
@@ -23,21 +23,43 @@ public class ExportadorExcel {
                 writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
                 writer.write("<?mso-application progid=\"Excel.Sheet\"?>\n");
                 writer.write("<Workbook xmlns=\"" + NS + "\" xmlns:ss=\"" + NS + "\">\n");
-                writer.write("<Worksheet ss:Name=\"Claves de acceso\"><Table>\n");
-                fila(writer, "Nro. candidato", "Apellido", "Nombre", "Tipo documento",
-                        "Nro. documento", "Email", "Clave de ingreso");
-                for (Object registro : contenido) {
-                    if (!(registro instanceof CandidatoConClaveDTO candidato)) {
-                        throw new IllegalArgumentException("La exportación espera elementos CandidatoConClaveDTO.");
-                    }
-                    fila(writer, candidato.getNroCandidato(), candidato.getApellido(), candidato.getNombre(),
-                            candidato.getTipoDocumento(), candidato.getNroDocumento(), candidato.getEmail(),
-                            candidato.getClave());
+                if (!contenido.isEmpty() && contenido.get(0) instanceof CandidatoConClaveDTO) {
+                    exportarClaves(writer, contenido);
+                } else {
+                    exportarResultados(writer, contenido);
                 }
                 writer.write("</Table></Worksheet></Workbook>\n");
             }
         } catch (IOException e) {
             throw new IllegalStateException("No se pudo escribir el archivo Excel en " + archivo, e);
+        }
+    }
+
+    private void exportarClaves(BufferedWriter writer, List<?> contenido) throws IOException {
+        writer.write("<Worksheet ss:Name=\"Claves de acceso\"><Table>\n");
+        fila(writer, "Nro. candidato", "Apellido", "Nombre", "Tipo documento",
+                "Nro. documento", "Email", "Clave de ingreso");
+        for (Object registro : contenido) {
+            if (!(registro instanceof CandidatoConClaveDTO candidato)) {
+                throw new IllegalArgumentException("La exportación de claves espera elementos CandidatoConClaveDTO.");
+            }
+            fila(writer, candidato.getNroCandidato(), candidato.getApellido(), candidato.getNombre(),
+                    candidato.getTipoDocumento(), candidato.getNroDocumento(), candidato.getEmail(),
+                    candidato.getClave());
+        }
+    }
+
+    private void exportarResultados(BufferedWriter writer, List<?> contenido) throws IOException {
+        writer.write("<Worksheet ss:Name=\"Resultados\"><Table>\n");
+        fila(writer, "Nro. candidato", "Apellido", "Nombre", "Puntaje obtenido",
+                "Fecha de cálculo", "Estado del cuestionario");
+        for (Object registro : contenido) {
+            if (!(registro instanceof ResultadoExportacionDTO resultado)) {
+                throw new IllegalArgumentException("La exportación de resultados espera elementos ResultadoExportacionDTO.");
+            }
+            fila(writer, resultado.getNroCandidato(), resultado.getApellido(), resultado.getNombre(),
+                    resultado.getPuntajeObtenido(), resultado.getFechaCalculo(),
+                    resultado.getEstadoCuestionario());
         }
     }
 
